@@ -7,46 +7,47 @@ import java.awt.*;
 public class HttpFtpProxyClient {
 
     public static void main(String[] args) {
-        new HttpFtpProxyClient(2);
+        new HttpFtpProxyClient();
     }
 
-//    public HttpFtpProxyClient() {
-//        SwingUtilities.invokeLater(() -> {
+    public HttpFtpProxyClient() {
+        SwingUtilities.invokeLater(() -> {
 //            JFrame frame = new JFrame("Test");
-//            frame.add(new MenuPane());
+//            frame.add(new LoginFrame());
+            new LoginFrame();
 //            frame.setSize(800, 480);
 //            frame.setResizable(false);
-////            frame.pack();
+//            frame.pack();
 //            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 //            frame.setLocationRelativeTo(null);
 //            frame.setVisible(true);
-//        });
-//    }
+        });
+    }
+
+    class MenuPane extends JPanel {
+        public MenuPane() {
+            setBorder(new EmptyBorder(10, 10, 10, 10));
+            setLayout(new GridBagLayout());
+
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridwidth = GridBagConstraints.REMAINDER;
+//            gbc.anchor = GridBagConstraints.NORTH;
 //
-//    class MenuPane extends JPanel {
-//        public MenuPane() {
-//            setBorder(new EmptyBorder(10, 10, 10, 10));
-//            setLayout(new GridBagLayout());
-//
-//            GridBagConstraints gbc = new GridBagConstraints();
-//            gbc.gridwidth = GridBagConstraints.REMAINDER;
-////            gbc.anchor = GridBagConstraints.NORTH;
-////
-////            add(new JLabel("<html><h1><strong><i>Krisko Beatz Quiz</i></strong></h1><hr></html>"), gbc);
-//
-//            gbc.anchor = GridBagConstraints.CENTER;
-//            gbc.fill = GridBagConstraints.HORIZONTAL;
-//
-//            JPanel buttons = new JPanel(new GridBagLayout());
-//            buttons.add(new JButton("Start"), gbc);
-//            buttons.add(new JButton("Show scores"), gbc);
-//            buttons.add(new JButton("Help"), gbc);
-//            buttons.add(new JButton("Exit"), gbc);
-//
-//            gbc.weighty = 1;
-//            add(buttons, gbc);
-//        }
-//    }
+//            add(new JLabel("<html><h1><strong><i>Krisko Beatz Quiz</i></strong></h1><hr></html>"), gbc);
+
+            gbc.anchor = GridBagConstraints.CENTER;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+
+            JPanel buttons = new JPanel(new GridBagLayout());
+            buttons.add(new JButton("Start"), gbc);
+            buttons.add(new JButton("Show scores"), gbc);
+            buttons.add(new JButton("Help"), gbc);
+            buttons.add(new JButton("Exit"), gbc);
+
+            gbc.weighty = 1;
+            add(buttons, gbc);
+        }
+    }
 
     public HttpFtpProxyClient(int q) {
         JFrame frame = new JFrame("Hello");
@@ -66,7 +67,6 @@ public class HttpFtpProxyClient {
         JLabel label3 = new JLabel("Label3");
 
         JButton but1 = new JButton("Test");
-//        but1.setSize(150, 30);
         but1.setPreferredSize(new Dimension(150, 30));
         JButton but2 = new JButton("Vere long test button with text");
 
@@ -74,10 +74,7 @@ public class HttpFtpProxyClient {
         labelPane.add(but1, c);
         labelPane.add(but2, c);
 
-        labelPane.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Test border title"),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5))
-        );
+        labelPane.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         c.weighty = 1;
         frame.add(labelPane);
