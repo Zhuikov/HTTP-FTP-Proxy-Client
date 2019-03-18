@@ -3,8 +3,58 @@ package HttpFtpProxyClient;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
 
 public class HttpFtpProxyClient {
+
+    static public final String proxyAddress = "127.0.0.1";
+    static public final int proxyPort = 7500;
+
+    static private final String contentLength = "Content-Length: ";
+
+    static class DataAndCode {
+        private String code = null;
+        private ArrayList<Character> data = null;
+
+        public DataAndCode() {}
+
+        public String getCode() {
+            return code;
+        }
+
+        public ArrayList<Character> getData() {
+            return data;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
+
+        public void setData(ArrayList<Character> data) {
+            this.data = data;
+        }
+    }
+
+    public static void main1(String[] args) {
+        String st = "IURII:GAGARIN";
+        byte[] decBytes = Base64.getEncoder().encode(st.getBytes());
+        String dec = new String(decBytes, StandardCharsets.UTF_8);
+        System.out.println(dec);
+        byte[] encBytes = Base64.getDecoder().decode(dec.getBytes());
+        String enc = new String(encBytes, StandardCharsets.UTF_8);
+        System.out.println(enc);
+
+        StringBuilder sb = new StringBuilder();
+        if (sb.toString().isEmpty()) {
+            System.out.println("EMPTY");
+        } else System.out.println("NO");
+    }
 
     public static void main(String[] args) {
         new HttpFtpProxyClient();
@@ -22,6 +72,69 @@ public class HttpFtpProxyClient {
 //            frame.setLocationRelativeTo(null);
 //            frame.setVisible(true);
         });
+    }
+
+    public static HttpFtpProxyClient.DataAndCode send(String request) throws IOException {
+        Socket socket = new Socket(proxyAddress, proxyPort);
+        OutputStream os = socket.getOutputStream();
+        InputStream is = socket.getInputStream();
+
+        os.write(request.getBytes());
+//        os.close();
+
+        return readResponse(socket);
+    }
+
+    static private DataAndCode readResponse(Socket socket) throws IOException {
+
+        DataAndCode dataAndCode = new DataAndCode();
+        InputStream is = socket.getInputStream();
+
+        String line;
+        ArrayList<String> headers = new ArrayList<>();
+        while (true) {
+            line = readString(is);
+            if (line.isEmpty()) break;
+            headers.add(readString(is));
+        }
+
+        String[] firstLine = headers.get(0).split(" ");
+        dataAndCode.setCode(firstLine[1]);
+
+        int bodyLength = 0;
+        for (String s : headers) {
+            if (s.substring(0, contentLength.length()).equals(contentLength)) {
+                bodyLength = Integer.parseInt(s.substring(contentLength.length()));
+                break;
+            }
+        }
+
+        byte[] body = new byte[bodyLength];
+        System.out.println("Body len = " + bodyLength + "\nRead = " + is.read(body));
+//        is.read(body);
+
+        String bodyString = new String(body);
+        ArrayList<Character> bodyData = new ArrayList<>();
+        for (char c : bodyString.toCharArray()) {
+            bodyData.add(c);
+        }
+
+        dataAndCode.setData(bodyData);
+
+        return dataAndCode;
+    }
+
+    static private String readString(InputStream is) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        char value;
+
+        while (true) {
+            value = (char)is.read();
+            if (value == '\n') break;
+            sb.append(value);
+        }
+
+        return sb.toString();
     }
 
     class MenuPane extends JPanel {
@@ -48,47 +161,4 @@ public class HttpFtpProxyClient {
             add(buttons, gbc);
         }
     }
-
-    public HttpFtpProxyClient(int q) {
-        JFrame frame = new JFrame("Hello");
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
-        JPanel labelPane = new JPanel(new GridBagLayout());
-
-        labelPane.setLayout(new GridBagLayout());
-
-        GridBagConstraints c = new GridBagConstraints();
-        c.anchor = GridBagConstraints.CENTER;
-        c.gridwidth = GridBagConstraints.REMAINDER;
-        c.fill = GridBagConstraints.VERTICAL;
-
-        JLabel label1 = new JLabel("Label1");
-        JLabel label2 = new JLabel("Label2");
-        JLabel label3 = new JLabel("Label3");
-
-        JButton but1 = new JButton("Test");
-        but1.setPreferredSize(new Dimension(150, 30));
-        JButton but2 = new JButton("Vere long test button with text");
-
-        labelPane.add(label1, c);
-        labelPane.add(but1, c);
-        labelPane.add(but2, c);
-
-        labelPane.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        c.weighty = 1;
-        frame.add(labelPane);
-
-//        JPanel all = new JPanel();
-//        BorderLayout borderLayout = new BorderLayout();
-//        all.setLayout(borderLayout);
-//        all.add(labelPane, BorderLayout.CENTER);
-
-//        add(all);
-
-        frame.setSize(800, 480);
-        frame.setResizable(false);
-        frame.setVisible(true);
-    }
-
 }

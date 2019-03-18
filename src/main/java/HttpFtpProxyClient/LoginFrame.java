@@ -3,6 +3,10 @@ package HttpFtpProxyClient;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.Base64;
 
 public class LoginFrame {
 
@@ -10,8 +14,8 @@ public class LoginFrame {
     private JTextField userText = new JTextField(10);
     private JPasswordField passText = new JPasswordField(10);
 
-    private final String customItem = "*custom*";
-    private final String[] serversText = { "ftp.funet.fi", "ftp.sunet.se", customItem };
+    static private final String customItem = "*custom*";
+    static private final String[] serversText = { "ftp.funet.fi", "ftp.sunet.se", customItem };
     private JTextField serverCustomText = new JTextField(10);
     private JComboBox serverBox = new JComboBox(serversText);
 
@@ -43,13 +47,16 @@ public class LoginFrame {
 
         addLabel(loginForm, 0, userLabel);
         addComponent(loginForm, 0, userText);
+        userText.setText("anonymous");
         addLabel(loginForm, 1, passLabel);
         addComponent(loginForm, 1, passText);
+        passText.setText("PASSWORD");
         addLabel(loginForm, 2, serverLabel);
         addComponent(loginForm, 2, serverBox);
         addComponent(loginForm, 3, serverCustomText);
 
         addConnectButton(loginForm, connectButton);
+        connectButton.addActionListener(e -> connectAction());
 
         JLabel topLabel = new JLabel("<html><h1 style=\"color: rgb(25, 116, 210)\">" +
                 "<strong><i>HTTP-FTP Proxy Client</i></strong></h1><hr></html>");
@@ -95,6 +102,30 @@ public class LoginFrame {
         c.gridy = 4;
         c.gridwidth = 3;
         panel.add(button, c);
+    }
+
+    // запрашивает list / у указанного сервера.
+    private void connectAction() {
+
+        final String selectedServer = serverBox.getSelectedItem().toString();
+        final String serverAddress = (!selectedServer.equals(customItem)) ? selectedServer : serverCustomText.getText();
+        // проверить пустые поля
+        final String loginPassword = Base64.getEncoder().encodeToString(
+                (userText.getText() + ':' + passText.getText()).getBytes()
+        );
+        String request = "GET " + serverAddress + "/ HTTP/1.1\n" +
+                "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
+                "Authorization: Basic " + loginPassword + "\n\n";
+
+        HttpFtpProxyClient.DataAndCode response;
+        try {
+            response = HttpFtpProxyClient.send(request);
+            System.out.println(response.getCode());
+            System.out.println(response.getData());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
