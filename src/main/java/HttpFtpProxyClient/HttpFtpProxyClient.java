@@ -77,7 +77,6 @@ public class HttpFtpProxyClient {
     public static HttpFtpProxyClient.DataAndCode send(String request) throws IOException {
         Socket socket = new Socket(proxyAddress, proxyPort);
         OutputStream os = socket.getOutputStream();
-        InputStream is = socket.getInputStream();
 
         os.write(request.getBytes());
 //        os.close();
@@ -94,8 +93,9 @@ public class HttpFtpProxyClient {
         ArrayList<String> headers = new ArrayList<>();
         while (true) {
             line = readString(is);
+            System.out.println("response line: " + line);
             if (line.isEmpty()) break;
-            headers.add(readString(is));
+            headers.add(line);
         }
 
         String[] firstLine = headers.get(0).split(" ");
@@ -103,21 +103,32 @@ public class HttpFtpProxyClient {
 
         int bodyLength = 0;
         for (String s : headers) {
-            if (s.substring(0, contentLength.length()).equals(contentLength)) {
+            if (s.length() > contentLength.length() &&
+                    s.substring(0, contentLength.length()).equals(contentLength)) {
                 bodyLength = Integer.parseInt(s.substring(contentLength.length()));
                 break;
             }
         }
 
-        byte[] body = new byte[bodyLength];
-        System.out.println("Body len = " + bodyLength + "\nRead = " + is.read(body));
+//        byte[] body = new byte[bodyLength];
+        int readBytes = 0;
+//        while (readBytes < bodyLength) {
+//            readBytes += is.read(body);
+//        }
+
+        ArrayList<Character> bodyData = new ArrayList<>();
+        while (readBytes++ < bodyLength) {
+            bodyData.add((char) is.read());
+        }
+
+        System.out.println("Body len = " + bodyLength + "\n");
 //        is.read(body);
 
-        String bodyString = new String(body);
-        ArrayList<Character> bodyData = new ArrayList<>();
-        for (char c : bodyString.toCharArray()) {
-            bodyData.add(c);
-        }
+//        String bodyString = new String(body);
+//        ArrayList<Character> bodyData = new ArrayList<>();
+//        for (char c : bodyString.toCharArray()) {
+//            bodyData.add(c);
+//        }
 
         dataAndCode.setData(bodyData);
 

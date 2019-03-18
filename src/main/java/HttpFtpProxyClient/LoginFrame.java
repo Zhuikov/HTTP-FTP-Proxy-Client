@@ -120,8 +120,9 @@ public class LoginFrame {
         HttpFtpProxyClient.DataAndCode response;
         try {
             response = HttpFtpProxyClient.send(request);
-            System.out.println(response.getCode());
-            System.out.println(response.getData());
+            System.out.println("Response code = " + response.getCode());
+            for (char c : response.getData())
+                System.out.print(c);
         } catch (IOException e) {
             e.printStackTrace();
         }
