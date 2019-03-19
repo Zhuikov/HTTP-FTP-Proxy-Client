@@ -3,38 +3,46 @@ package HttpFtpProxyClient;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.Base64;
 
 public class LoginFrame {
 
-    private JFrame frame = new JFrame("Login");
-    private JTextField userText = new JTextField(10);
-    private JPasswordField passText = new JPasswordField(10);
+    public final static String frameKey = "login";
+
+    private final JPanel mainPanel = new JPanel();
+    private final ProxyClientGUI proxyClientGUI;
+
+    private final JTextField userText = new JTextField(10);
+    private final JPasswordField passText = new JPasswordField(10);
 
     static private final String customItem = "*custom*";
     static private final String[] serversText = { "ftp.funet.fi", "ftp.sunet.se", customItem };
     private JTextField serverCustomText = new JTextField(10);
     private JComboBox serverBox = new JComboBox(serversText);
 
-    private JLabel userLabel = new JLabel("User: ");
-    private JLabel passLabel = new JLabel("Password: ");
-    private JLabel serverLabel = new JLabel("Server: ");
+    private final JLabel userLabel = new JLabel("User: ");
+    private final JLabel passLabel = new JLabel("Password: ");
+    private final JLabel serverLabel = new JLabel("Server: ");
+    private final JButton connectButton = new JButton("Connect");
 
-    private JButton connectButton = new JButton("Connect");
 
-    public LoginFrame() {
+    public JPanel getMainPanel() {
+        return mainPanel;
+    }
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    public LoginFrame(ProxyClientGUI proxyClientGUI) {
 
+        this.proxyClientGUI = proxyClientGUI;
+
+        // Make the login form panel
         JPanel loginForm = new JPanel();
         loginForm.setLayout(new GridBagLayout());
 
-        userLabel.setFont(new Font("Serif", Font.PLAIN, 16));
-        passLabel.setFont(new Font("Serif", Font.PLAIN, 16));
-        serverLabel.setFont(new Font("Serif", Font.PLAIN, 16));
+        userLabel.setFont(ProxyClientGUI.labelFont);
+        passLabel.setFont(ProxyClientGUI.labelFont);
+        serverLabel.setFont(ProxyClientGUI.labelFont);
         serverCustomText.setEnabled(false);
         serverBox.addActionListener(e -> {
             if (serverBox.getSelectedItem().toString().equals(customItem)) {
@@ -58,23 +66,22 @@ public class LoginFrame {
         addConnectButton(loginForm, connectButton);
         connectButton.addActionListener(e -> connectAction());
 
+
+        // make the label panel.
+        JPanel labelPanel = new JPanel();
         JLabel topLabel = new JLabel("<html><h1 style=\"color: rgb(25, 116, 210)\">" +
                 "<strong><i>HTTP-FTP Proxy Client</i></strong></h1><hr></html>");
-        JPanel labelPanel = new JPanel();
         GridBagConstraints c = new GridBagConstraints();
         c.anchor = GridBagConstraints.NORTH;
         c.gridwidth = GridBagConstraints.REMAINDER;
         labelPanel.add(topLabel, c);
 
+        // login panel and label panel to main panel
         BorderLayout borderLayout = new BorderLayout();
         borderLayout.setVgap(-50);
-        frame.setLayout(borderLayout);
-        frame.add(labelPanel, BorderLayout.NORTH);
-        frame.add(loginForm, BorderLayout.CENTER);
-
-        frame.setSize(800, 480);
-        frame.setResizable(false);
-        frame.setVisible(true);
+        mainPanel.setLayout(borderLayout);
+        mainPanel.add(labelPanel, BorderLayout.NORTH);
+        mainPanel.add(loginForm, BorderLayout.CENTER);
     }
 
     private void addLabel(JPanel panel, int pos, JLabel label) {
@@ -109,25 +116,41 @@ public class LoginFrame {
 
         final String selectedServer = serverBox.getSelectedItem().toString();
         final String serverAddress = (!selectedServer.equals(customItem)) ? selectedServer : serverCustomText.getText();
-        // проверить пустые поля
+
+        if (serverAddress.isEmpty() || userText.getText().isEmpty() || passText.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "All fields must be filled");
+            return;
+        }
+
         final String loginPassword = Base64.getEncoder().encodeToString(
                 (userText.getText() + ':' + passText.getText()).getBytes()
         );
-        String request = "GET " + serverAddress + "/ HTTP/1.1\n" +
+        final String request = "GET " + serverAddress + "/ HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
                 "Authorization: Basic " + loginPassword + "\n\n";
 
+
         HttpFtpProxyClient.DataAndCode response;
-        try {
-            response = HttpFtpProxyClient.send(request);
+        StringBuilder list = new StringBuilder();
+
+        // open and close socket with proxy
+        try (Socket socket = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
+            HttpFtpProxyClient.send(socket, request);
+            response = HttpFtpProxyClient.readResponse(socket);
             System.out.println("Response code = " + response.getCode());
-            for (char c : response.getData())
-                System.out.print(c);
+            for (char c : response.getData()) {
+                list.append(c);
+            }
+            System.out.println(list);
         } catch (IOException e) {
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
         }
 
+        ServerFrame serverFrame = new ServerFrame(proxyClientGUI);
+//        serverFrame.getMainPanel().add(new JList(list.toString().split("\n")));
+        proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
+        proxyClientGUI.showPanel(ServerFrame.frameKey);
+        proxyClientGUI.setFrameTitle(serverAddress);
     }
-
 
 }

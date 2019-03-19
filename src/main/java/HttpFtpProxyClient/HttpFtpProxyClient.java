@@ -17,6 +17,7 @@ public class HttpFtpProxyClient {
     static public final int proxyPort = 7500;
 
     static private final String contentLength = "Content-Length: ";
+    static private ProxyClientGUI proxyClientGUI = new ProxyClientGUI();
 
     static class DataAndCode {
         private String code = null;
@@ -62,29 +63,23 @@ public class HttpFtpProxyClient {
 
     public HttpFtpProxyClient() {
         SwingUtilities.invokeLater(() -> {
-//            JFrame frame = new JFrame("Test");
-//            frame.add(new LoginFrame());
-            new LoginFrame();
-//            frame.setSize(800, 480);
-//            frame.setResizable(false);
-//            frame.pack();
-//            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-//            frame.setLocationRelativeTo(null);
-//            frame.setVisible(true);
+//            LoginFrame frame = new LoginFrame(proxyClientGUI);
+//            proxyClientGUI.addPanel(frame.getMainPanel(),LoginFrame.frameKey);
+//            proxyClientGUI.showPanel(LoginFrame.frameKey);
+
+            ServerFrame serverFrame = new ServerFrame(proxyClientGUI);
+            proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
+            proxyClientGUI.showPanel(ServerFrame.frameKey);
         });
     }
 
-    public static HttpFtpProxyClient.DataAndCode send(String request) throws IOException {
-        Socket socket = new Socket(proxyAddress, proxyPort);
+    public static void send(Socket socket, String request) throws IOException {
         OutputStream os = socket.getOutputStream();
-
         os.write(request.getBytes());
 //        os.close();
-
-        return readResponse(socket);
     }
 
-    static private DataAndCode readResponse(Socket socket) throws IOException {
+    public static DataAndCode readResponse(Socket socket) throws IOException {
 
         DataAndCode dataAndCode = new DataAndCode();
         InputStream is = socket.getInputStream();
@@ -121,7 +116,7 @@ public class HttpFtpProxyClient {
             bodyData.add((char) is.read());
         }
 
-        System.out.println("Body len = " + bodyLength + "\n");
+        System.out.println("Body len = " + bodyLength);
 //        is.read(body);
 
 //        String bodyString = new String(body);
