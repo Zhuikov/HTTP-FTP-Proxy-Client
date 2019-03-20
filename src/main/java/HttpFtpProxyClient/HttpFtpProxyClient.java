@@ -51,10 +51,6 @@ public class HttpFtpProxyClient {
         String enc = new String(encBytes, StandardCharsets.UTF_8);
         System.out.println(enc);
 
-        StringBuilder sb = new StringBuilder();
-        if (sb.toString().isEmpty()) {
-            System.out.println("EMPTY");
-        } else System.out.println("NO");
     }
 
     public static void main(String[] args) {
@@ -63,22 +59,22 @@ public class HttpFtpProxyClient {
 
     public HttpFtpProxyClient() {
         SwingUtilities.invokeLater(() -> {
-//            LoginFrame frame = new LoginFrame(proxyClientGUI);
-//            proxyClientGUI.addPanel(frame.getMainPanel(),LoginFrame.frameKey);
-//            proxyClientGUI.showPanel(LoginFrame.frameKey);
+            LoginFrame frame = new LoginFrame(proxyClientGUI);
+            proxyClientGUI.addPanel(frame.getMainPanel(),LoginFrame.frameKey);
+            proxyClientGUI.showPanel(LoginFrame.frameKey);
 
-            ServerFrame serverFrame = new ServerFrame(proxyClientGUI);
-            proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
-            proxyClientGUI.showPanel(ServerFrame.frameKey);
+//            ServerFrame serverFrame = new ServerFrame(proxyClientGUI);
+//            proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
+//            proxyClientGUI.showPanel(ServerFrame.frameKey);
         });
     }
 
     public static void send(Socket socket, String request) throws IOException {
         OutputStream os = socket.getOutputStream();
         os.write(request.getBytes());
-//        os.close();
     }
 
+    //todo убрать DataAndCode, возвращать ArrayList
     public static DataAndCode readResponse(Socket socket) throws IOException {
 
         DataAndCode dataAndCode = new DataAndCode();
@@ -141,30 +137,5 @@ public class HttpFtpProxyClient {
         }
 
         return sb.toString();
-    }
-
-    class MenuPane extends JPanel {
-        public MenuPane() {
-            setBorder(new EmptyBorder(10, 10, 10, 10));
-            setLayout(new GridBagLayout());
-
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridwidth = GridBagConstraints.REMAINDER;
-//            gbc.anchor = GridBagConstraints.NORTH;
-//
-//            add(new JLabel("<html><h1><strong><i>Krisko Beatz Quiz</i></strong></h1><hr></html>"), gbc);
-
-            gbc.anchor = GridBagConstraints.CENTER;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-
-            JPanel buttons = new JPanel(new GridBagLayout());
-            buttons.add(new JButton("Start"), gbc);
-            buttons.add(new JButton("Show scores"), gbc);
-            buttons.add(new JButton("Help"), gbc);
-            buttons.add(new JButton("Exit"), gbc);
-
-            gbc.weighty = 1;
-            add(buttons, gbc);
-        }
     }
 }

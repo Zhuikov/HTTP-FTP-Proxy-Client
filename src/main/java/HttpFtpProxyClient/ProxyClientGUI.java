@@ -13,7 +13,7 @@ public class ProxyClientGUI {
     private JPanel cardLayoutPanel = new JPanel(cardLayout);
 
     public ProxyClientGUI() {
-        frame.setSize(700, 480);
+        frame.setSize(770, 480);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
         frame.add(cardLayoutPanel);

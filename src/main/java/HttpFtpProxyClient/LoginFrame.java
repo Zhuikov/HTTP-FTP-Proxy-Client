@@ -125,29 +125,38 @@ public class LoginFrame {
         final String loginPassword = Base64.getEncoder().encodeToString(
                 (userText.getText() + ':' + passText.getText()).getBytes()
         );
-        final String request = "GET " + serverAddress + "/ HTTP/1.1\n" +
+
+        final String listRequest = "GET " + serverAddress + "/ HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
                 "Authorization: Basic " + loginPassword + "\n\n";
+        final String pathRequest = "pwd";
 
-
-        HttpFtpProxyClient.DataAndCode response;
-        StringBuilder list = new StringBuilder();
+        HttpFtpProxyClient.DataAndCode listResponse = null;
+        HttpFtpProxyClient.DataAndCode pathResponse = null;
 
         // open and close socket with proxy
         try (Socket socket = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
-            HttpFtpProxyClient.send(socket, request);
-            response = HttpFtpProxyClient.readResponse(socket);
-            System.out.println("Response code = " + response.getCode());
-            for (char c : response.getData()) {
-                list.append(c);
-            }
-            System.out.println(list);
+            HttpFtpProxyClient.send(socket, listRequest);
+            listResponse = HttpFtpProxyClient.readResponse(socket);
+
+            HttpFtpProxyClient.send(socket, pathRequest);
+            pathResponse = HttpFtpProxyClient.readResponse(socket);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
         }
 
         ServerFrame serverFrame = new ServerFrame(proxyClientGUI);
-//        serverFrame.getMainPanel().add(new JList(list.toString().split("\n")));
+        if (listResponse == null) {
+            System.out.println("List response = null");
+        } else {
+            serverFrame.updateList(listResponse.getData());
+        }
+
+        if (pathResponse == null) {
+            System.out.println("Path response = null");
+        } else {
+            serverFrame.updateCurrentPath(pathResponse.getData());
+        }
         proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
         proxyClientGUI.showPanel(ServerFrame.frameKey);
         proxyClientGUI.setFrameTitle(serverAddress);
