@@ -55,7 +55,7 @@ public class ServerFrame {
         JPanel pathPanel = new JPanel();
         pathLabel.setFont(ProxyClientGUI.labelFont);
         currentDirLabel.setFont(ProxyClientGUI.labelFont);
-        pathPanel.add(pathLabel);
+        pathPanel.add(currentDirLabel);
 
         mainPanel.setLayout(new GridBagLayout());
         mainPanel.add(pathPanel, constraintsPathPanel());

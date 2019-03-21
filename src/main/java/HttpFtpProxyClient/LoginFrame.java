@@ -111,7 +111,7 @@ public class LoginFrame {
         panel.add(button, c);
     }
 
-    // запрашивает list / у указанного сервера.
+    // запрашивает list / и pwd у указанного сервера.
     private void connectAction() {
 
         final String selectedServer = serverBox.getSelectedItem().toString();
@@ -126,21 +126,29 @@ public class LoginFrame {
                 (userText.getText() + ':' + passText.getText()).getBytes()
         );
 
-        final String listRequest = "GET " + serverAddress + "/ HTTP/1.1\n" +
+        final String listRequest = "GET " + serverAddress + "/file/ HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
                 "Authorization: Basic " + loginPassword + "\n\n";
-        final String pathRequest = "pwd";
+
+        final String pathRequest = "GET " + serverAddress + "/pwd HTTP/1.1\n" +
+                "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
+                "Authorization: Basic " + loginPassword + "\n\n";
 
         HttpFtpProxyClient.DataAndCode listResponse = null;
         HttpFtpProxyClient.DataAndCode pathResponse = null;
 
-        // open and close socket with proxy
-        try (Socket socket = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
-            HttpFtpProxyClient.send(socket, listRequest);
-            listResponse = HttpFtpProxyClient.readResponse(socket);
+        // open and close socket for list request
+        try (Socket socketList = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
+            HttpFtpProxyClient.send(socketList, listRequest);
+            listResponse = HttpFtpProxyClient.readResponse(socketList);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
+        }
 
-            HttpFtpProxyClient.send(socket, pathRequest);
-            pathResponse = HttpFtpProxyClient.readResponse(socket);
+        // open and close socket for current dir request
+        try (Socket socketCurrentDir = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
+            HttpFtpProxyClient.send(socketCurrentDir, pathRequest);
+            pathResponse = HttpFtpProxyClient.readResponse(socketCurrentDir);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
         }
@@ -157,6 +165,7 @@ public class LoginFrame {
         } else {
             serverFrame.updateCurrentPath(pathResponse.getData());
         }
+
         proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
         proxyClientGUI.showPanel(ServerFrame.frameKey);
         proxyClientGUI.setFrameTitle(serverAddress);

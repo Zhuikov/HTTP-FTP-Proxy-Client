@@ -108,11 +108,12 @@ public class HttpFtpProxyClient {
 //        }
 
         ArrayList<Character> bodyData = new ArrayList<>();
-        while (readBytes++ < bodyLength) {
+        while (readBytes < bodyLength) {
             bodyData.add((char) is.read());
+            readBytes++;
         }
 
-        System.out.println("Body len = " + bodyLength);
+        System.out.println("Body len = " + bodyLength + "\n read = " + readBytes);
 //        is.read(body);
 
 //        String bodyString = new String(body);
