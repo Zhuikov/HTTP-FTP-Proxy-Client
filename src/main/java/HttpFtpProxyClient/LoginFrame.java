@@ -126,7 +126,7 @@ public class LoginFrame {
                 (userText.getText() + ':' + passText.getText()).getBytes()
         );
 
-        final String listRequest = "GET " + serverAddress + "/file/ HTTP/1.1\n" +
+        final String listRequest = "GET " + serverAddress + "/file/?type=\"A\" HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
                 "Authorization: Basic " + loginPassword + "\n\n";
 
