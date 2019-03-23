@@ -80,14 +80,17 @@ public class HttpFtpProxyClient {
         DataAndCode dataAndCode = new DataAndCode();
         InputStream is = socket.getInputStream();
 
+//        System.out.println("readResponse: before headers");
         String line;
         ArrayList<String> headers = new ArrayList<>();
         while (true) {
+//            System.out.println("\treadResponse: readString");
             line = readString(is);
-            System.out.println("response line: " + line);
+//            System.out.println("response line: " + line);
             if (line.isEmpty()) break;
             headers.add(line);
         }
+//        System.out.println("readResponse: after headers");
 
         String[] firstLine = headers.get(0).split(" ");
         dataAndCode.setCode(firstLine[1]);
@@ -101,26 +104,16 @@ public class HttpFtpProxyClient {
             }
         }
 
-//        byte[] body = new byte[bodyLength];
+//        System.out.println("readResponse: before read data");
         int readBytes = 0;
-//        while (readBytes < bodyLength) {
-//            readBytes += is.read(body);
-//        }
-
         ArrayList<Character> bodyData = new ArrayList<>();
         while (readBytes < bodyLength) {
             bodyData.add((char) is.read());
             readBytes++;
         }
+//        System.out.println("readResponse: after read data");
 
         System.out.println("Body len = " + bodyLength + "\n read = " + readBytes);
-//        is.read(body);
-
-//        String bodyString = new String(body);
-//        ArrayList<Character> bodyData = new ArrayList<>();
-//        for (char c : bodyString.toCharArray()) {
-//            bodyData.add(c);
-//        }
 
         dataAndCode.setData(bodyData);
 
@@ -132,6 +125,7 @@ public class HttpFtpProxyClient {
         char value;
 
         while (true) {
+//            System.out.println("\treadString");
             value = (char)is.read();
             if (value == '\n') break;
             sb.append(value);

@@ -126,7 +126,7 @@ public class LoginFrame {
                 (userText.getText() + ':' + passText.getText()).getBytes()
         );
 
-        final String listRequest = "GET " + serverAddress + "/file/?type=\"A\" HTTP/1.1\n" +
+        final String listRequest = "GET " + serverAddress + "/file/index/?type=\"A\" HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
                 "Authorization: Basic " + loginPassword + "\n\n";
 
@@ -143,6 +143,7 @@ public class LoginFrame {
             listResponse = HttpFtpProxyClient.readResponse(socketList);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
+            return;
         }
 
         // open and close socket for current dir request
@@ -151,6 +152,7 @@ public class LoginFrame {
             pathResponse = HttpFtpProxyClient.readResponse(socketCurrentDir);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
+            return;
         }
 
         ServerFrame serverFrame = new ServerFrame(proxyClientGUI);

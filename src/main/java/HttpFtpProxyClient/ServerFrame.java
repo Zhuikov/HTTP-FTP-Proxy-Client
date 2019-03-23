@@ -3,6 +3,8 @@ package HttpFtpProxyClient;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 public class ServerFrame {
@@ -24,9 +26,26 @@ public class ServerFrame {
 
         // setting list panel
         JPanel listPanel = new JPanel();
-        list.setPreferredSize(new Dimension(470, 350));
+//        list.setPreferredSize(new Dimension(470, 350));
         list.setFont(new Font("monospaced", Font.PLAIN, 10));
-        listPanel.add(list);
+        JScrollPane menuScrollPane = new JScrollPane(list);
+        list.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent evt) {
+                JList list = (JList)evt.getSource();
+                if (evt.getClickCount() == 2) {
+                    // Double-click detected
+                    int index = list.locationToIndex(evt.getPoint());
+                    System.out.println(list.getSelectedValue().toString());
+                } else if (evt.getClickCount() == 3) {
+                    // Triple-click detected
+                    int index = list.locationToIndex(evt.getPoint());
+                }
+            }
+            });
+
+
+        menuScrollPane.setPreferredSize(new Dimension(470, 350));
+        listPanel.add(menuScrollPane);
 
         // setting panel with "download" and "upload" buttons
         downloadButton.setPreferredSize(buttonSize);
