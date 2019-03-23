@@ -5,11 +5,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class ServerFrame {
 
     public static String frameKey = "server";
+    private String currentDir = "/";
 
     private final ProxyClientGUI proxyClientGUI;
     private final JPanel mainPanel = new JPanel();
@@ -20,7 +23,7 @@ public class ServerFrame {
     private final JLabel currentDirLabel = new JLabel("/");
     private final Dimension buttonSize = new Dimension(150, 25);
 
-    public ServerFrame(ProxyClientGUI proxyClientGUI) {
+    public ServerFrame(ProxyClientGUI proxyClientGUI, String serverAddress, String loginPassword) {
 
         this.proxyClientGUI = proxyClientGUI;
 
@@ -33,15 +36,39 @@ public class ServerFrame {
             public void mouseClicked(MouseEvent evt) {
                 JList list = (JList)evt.getSource();
                 if (evt.getClickCount() == 2) {
-                    // Double-click detected
-                    int index = list.locationToIndex(evt.getPoint());
-                    System.out.println(list.getSelectedValue().toString());
-                } else if (evt.getClickCount() == 3) {
-                    // Triple-click detected
-                    int index = list.locationToIndex(evt.getPoint());
+                    String element = list.getSelectedValue().toString();
+                    System.out.println(element);
+                    if (element.charAt(0) == 'd') {
+                        String request = "GET " + serverAddress + "/file" + currentDir + getDirName(element) +
+                                "/?type=\"A\" HTTP/1.1\n" +
+                                "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
+                                "Authorization: Basic " + loginPassword + "\n\n";
+                        try (Socket changeListSocket = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)){
+                            HttpFtpProxyClient.send(changeListSocket, request);
+                            HttpFtpProxyClient.DataAndCode response = HttpFtpProxyClient.readResponse(changeListSocket);
+                            updateList(response.getData());
+                        } catch (IOException e) {
+                            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
+                            return;
+                        }
+                        request = "GET " + serverAddress + "/cwd?dir=\"" + getDirName(element) + "\" HTTP/1.1\n" +
+                                "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
+                                "Authorization: Basic " + loginPassword + "\n\n";
+                        try (Socket changeCurrentDirSocket = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
+                            HttpFtpProxyClient.send(changeCurrentDirSocket, request);
+                            HttpFtpProxyClient.DataAndCode response = HttpFtpProxyClient.readResponse(changeCurrentDirSocket);
+                            if (response.getCode().equals("250")) {
+                                currentDir += getDirName(element) + '/';
+                                currentDirLabel.setText(currentDir);
+                            }
+                        } catch (IOException e) {
+                            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot change directory");
+                            return;
+                        }
+                    }
                 }
             }
-            });
+        });
 
 
         menuScrollPane.setPreferredSize(new Dimension(470, 350));
@@ -82,8 +109,31 @@ public class ServerFrame {
         mainPanel.add(buttonsPanel, constraintsButtonPanel());
     }
 
+    public void updateCurrentPath(ArrayList<Character> currentPath) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (char c : currentPath) {
+            stringBuilder.append(c);
+        }
+        currentDir = stringBuilder.toString();
+        currentDirLabel.setText(currentDir);
+    }
+
+    public void updateList(ArrayList<Character> ftpResponse) {
+        StringBuilder stringList = new StringBuilder();
+        for (Character c : ftpResponse) {
+            stringList.append(c);
+        }
+        String[] lines = stringList.toString().split("\n");
+
+        list.setListData(lines);
+    }
+
     public JPanel getMainPanel() {
         return mainPanel;
+    }
+
+    private String getDirName(String line) {
+        return line.substring(line.lastIndexOf(' ') + 1, line.length() - 1);
     }
 
     private GridBagConstraints constraintsListPanel() {
@@ -150,21 +200,7 @@ public class ServerFrame {
         return panel;
     }
 
-    public void updateCurrentPath(ArrayList<Character> currentPath) {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (char c : currentPath) {
-            stringBuilder.append(c);
-        }
-        currentDirLabel.setText(stringBuilder.toString());
-    }
 
-    public void updateList(ArrayList<Character> ftpResponse) {
-        StringBuilder stringList = new StringBuilder();
-        for (Character c : ftpResponse) {
-            stringList.append(c);
-        }
-        String[] lines = stringList.toString().split("\n");
 
-        list.setListData(lines);
-    }
+
 }

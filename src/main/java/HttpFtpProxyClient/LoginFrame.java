@@ -134,8 +134,8 @@ public class LoginFrame {
                 "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
                 "Authorization: Basic " + loginPassword + "\n\n";
 
-        HttpFtpProxyClient.DataAndCode listResponse = null;
-        HttpFtpProxyClient.DataAndCode pathResponse = null;
+        HttpFtpProxyClient.DataAndCode listResponse;
+        HttpFtpProxyClient.DataAndCode pathResponse;
 
         // open and close socket for list request
         try (Socket socketList = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
@@ -155,7 +155,7 @@ public class LoginFrame {
             return;
         }
 
-        ServerFrame serverFrame = new ServerFrame(proxyClientGUI);
+        ServerFrame serverFrame = new ServerFrame(proxyClientGUI, serverAddress, loginPassword);
         if (listResponse == null) {
             System.out.println("List response = null");
         } else {
