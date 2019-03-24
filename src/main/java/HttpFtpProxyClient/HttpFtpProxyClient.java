@@ -67,13 +67,19 @@ public class HttpFtpProxyClient {
         });
     }
 
-    public static void send(Socket socket, String request) throws IOException {
+    public static DataAndCode makeRequest(String request) throws IOException {
+        Socket socket = new Socket(proxyAddress, proxyPort);
+        sendRequest(socket, request);
+        return readResponse(socket);
+    }
+
+    private static void sendRequest(Socket socket, String request) throws IOException {
         OutputStream os = socket.getOutputStream();
         os.write(request.getBytes());
     }
 
     //todo убрать DataAndCode, возвращать ArrayList
-    public static DataAndCode readResponse(Socket socket) throws IOException {
+    private static DataAndCode readResponse(Socket socket) throws IOException {
 
         DataAndCode dataAndCode = new DataAndCode();
         InputStream is = socket.getInputStream();

@@ -6,7 +6,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.ArrayList;
 
 public class ServerFrame {
@@ -29,7 +28,6 @@ public class ServerFrame {
 
         // setting list panel
         JPanel listPanel = new JPanel();
-//        list.setPreferredSize(new Dimension(470, 350));
         list.setFont(new Font("monospaced", Font.PLAIN, 10));
         JScrollPane menuScrollPane = new JScrollPane(list);
         list.addMouseListener(new MouseAdapter() {
@@ -39,29 +37,35 @@ public class ServerFrame {
                     String element = list.getSelectedValue().toString();
                     System.out.println(element);
                     if (element.charAt(0) == 'd') {
-                        String request = "GET " + serverAddress + "/file" + currentDir + getDirName(element) +
+                        String listRequest = "GET " + serverAddress + "/file" + currentDir + getDirName(element) +
                                 "/?type=\"A\" HTTP/1.1\n" +
                                 "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
                                 "Authorization: Basic " + loginPassword + "\n\n";
-                        try (Socket changeListSocket = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)){
-                            HttpFtpProxyClient.send(changeListSocket, request);
-                            HttpFtpProxyClient.DataAndCode response = HttpFtpProxyClient.readResponse(changeListSocket);
-                            updateList(response.getData());
+
+                        String cwdRequest = "GET " + serverAddress + "/cwd?dir=\"" + getDirName(element) + "\" HTTP/1.1\n" +
+                                "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
+                                "Authorization: Basic " + loginPassword + "\n\n";
+                        HttpFtpProxyClient.DataAndCode listResponse;
+                        HttpFtpProxyClient.DataAndCode cwdResponse;
+                        try {
+                            listResponse = HttpFtpProxyClient.makeRequest(listRequest);
+                            cwdResponse = HttpFtpProxyClient.makeRequest(cwdRequest);
                         } catch (IOException e) {
                             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
                             return;
                         }
-                        request = "GET " + serverAddress + "/cwd?dir=\"" + getDirName(element) + "\" HTTP/1.1\n" +
-                                "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
-                                "Authorization: Basic " + loginPassword + "\n\n";
-                        try (Socket changeCurrentDirSocket = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
-                            HttpFtpProxyClient.send(changeCurrentDirSocket, request);
-                            HttpFtpProxyClient.DataAndCode response = HttpFtpProxyClient.readResponse(changeCurrentDirSocket);
-                            if (response.getCode().equals("250")) {
-                                currentDir += getDirName(element) + '/';
-                                currentDirLabel.setText(currentDir);
-                            }
-                        } catch (IOException e) {
+
+                        if (listResponse.getData() != null) {
+                            updateList(listResponse.getData());
+                        } else {
+                            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot get list data");
+                            return;
+                        }
+
+                        if (cwdResponse.getCode().equals("200")) {
+                            currentDir += getDirName(element) + '/';
+                            currentDirLabel.setText(currentDir);
+                        } else {
                             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot change directory");
                             return;
                         }

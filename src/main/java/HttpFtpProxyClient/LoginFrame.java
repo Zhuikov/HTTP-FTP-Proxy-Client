@@ -126,47 +126,51 @@ public class LoginFrame {
                 (userText.getText() + ':' + passText.getText()).getBytes()
         );
 
-        final String listRequest = "GET " + serverAddress + "/file/index/?type=\"A\" HTTP/1.1\n" +
-                "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
-                "Authorization: Basic " + loginPassword + "\n\n";
+        final String listRequest = "GET " + serverAddress + "/file/?type=\"A\" HTTP/1.1\n" +
+                "Host: " + HttpFtpProxyClient.proxyAddress +
+                "\nAuthorization: Basic " + loginPassword + "\n\n";
 
-        final String pathRequest = "GET " + serverAddress + "/pwd HTTP/1.1\n" +
-                "Host: " + HttpFtpProxyClient.proxyAddress + '\n' +
-                "Authorization: Basic " + loginPassword + "\n\n";
+        final String cwdRequest = "GET "  + serverAddress + "/cwd?dir=\"/\" HTTP/1.1\n" +
+                "Host: " + HttpFtpProxyClient.proxyAddress +
+                "\nAuthorization: Basic " + loginPassword + "\n\n";
+
+        final String pwdRequest = "GET " + serverAddress + "/pwd HTTP/1.1\n" +
+                "Host: " + HttpFtpProxyClient.proxyAddress +
+                "\nAuthorization: Basic " + loginPassword + "\n\n";
 
         HttpFtpProxyClient.DataAndCode listResponse;
-        HttpFtpProxyClient.DataAndCode pathResponse;
+        HttpFtpProxyClient.DataAndCode cwdResponse;
+        HttpFtpProxyClient.DataAndCode pwdResponse;
 
-        // open and close socket for list request
-        try (Socket socketList = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
-            HttpFtpProxyClient.send(socketList, listRequest);
-            listResponse = HttpFtpProxyClient.readResponse(socketList);
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
-            return;
-        }
-
-        // open and close socket for current dir request
-        try (Socket socketCurrentDir = new Socket(HttpFtpProxyClient.proxyAddress, HttpFtpProxyClient.proxyPort)) {
-            HttpFtpProxyClient.send(socketCurrentDir, pathRequest);
-            pathResponse = HttpFtpProxyClient.readResponse(socketCurrentDir);
+        // make request for list, cwd, and pwd
+        try {
+            listResponse = HttpFtpProxyClient.makeRequest(listRequest);
+            cwdResponse = HttpFtpProxyClient.makeRequest(cwdRequest);
+            pwdResponse = HttpFtpProxyClient.makeRequest(pwdRequest);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
             return;
         }
 
         ServerFrame serverFrame = new ServerFrame(proxyClientGUI, serverAddress, loginPassword);
-        if (listResponse == null) {
-            System.out.println("List response = null");
-        } else {
+        if (listResponse.getData() != null) {
             serverFrame.updateList(listResponse.getData());
+        } else {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "list request is null");
         }
 
-        if (pathResponse == null) {
-            System.out.println("Path response = null");
+        if (cwdResponse.getCode().equals("200")) {
+            serverFrame.updateCurrentPath(pwdResponse.getData());
         } else {
-            serverFrame.updateCurrentPath(pathResponse.getData());
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "cwd code = " + cwdResponse.getCode());
         }
+
+        //  ????
+//        if (pwdResponse != null) {
+//            serverFrame.updateCurrentPath(pwdResponse.getData());
+//        } else {
+//            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "list request is null");
+//        }
 
         proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
         proxyClientGUI.showPanel(ServerFrame.frameKey);
