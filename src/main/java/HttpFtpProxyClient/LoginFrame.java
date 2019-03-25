@@ -18,7 +18,7 @@ public class LoginFrame {
     private final JPasswordField passText = new JPasswordField(10);
 
     static private final String customItem = "*custom*";
-    static private final String[] serversText = { "ftp.funet.fi", "ftp.sunet.se", customItem };
+    static private final String[] serversText = { customItem, "ftp.funet.fi", "ftp.sunet.se" };
     private JTextField serverCustomText = new JTextField(10);
     private JComboBox serverBox = new JComboBox(serversText);
 
@@ -43,6 +43,7 @@ public class LoginFrame {
         userLabel.setFont(ProxyClientGUI.labelFont);
         passLabel.setFont(ProxyClientGUI.labelFont);
         serverLabel.setFont(ProxyClientGUI.labelFont);
+        serverCustomText.setText("192.168.0.27");
         serverCustomText.setEnabled(false);
         serverBox.addActionListener(e -> {
             if (serverBox.getSelectedItem().toString().equals(customItem)) {
@@ -55,10 +56,10 @@ public class LoginFrame {
 
         addLabel(loginForm, 0, userLabel);
         addComponent(loginForm, 0, userText);
-        userText.setText("anonymous");
+        userText.setText("artem");
         addLabel(loginForm, 1, passLabel);
         addComponent(loginForm, 1, passText);
-        passText.setText("PASSWORD");
+        passText.setText("artem");
         addLabel(loginForm, 2, serverLabel);
         addComponent(loginForm, 2, serverBox);
         addComponent(loginForm, 3, serverCustomText);
@@ -134,19 +135,19 @@ public class LoginFrame {
                 "Host: " + HttpFtpProxyClient.proxyAddress +
                 "\nAuthorization: Basic " + loginPassword + "\n\n";
 
-        final String pwdRequest = "GET " + serverAddress + "/pwd HTTP/1.1\n" +
-                "Host: " + HttpFtpProxyClient.proxyAddress +
-                "\nAuthorization: Basic " + loginPassword + "\n\n";
+//        final String pwdRequest = "GET " + serverAddress + "/pwd HTTP/1.1\n" +
+//                "Host: " + HttpFtpProxyClient.proxyAddress +
+//                "\nAuthorization: Basic " + loginPassword + "\n\n";
 
         HttpFtpProxyClient.DataAndCode listResponse;
         HttpFtpProxyClient.DataAndCode cwdResponse;
-        HttpFtpProxyClient.DataAndCode pwdResponse;
+//        HttpFtpProxyClient.DataAndCode pwdResponse;
 
         // make request for list, cwd, and pwd
         try {
             listResponse = HttpFtpProxyClient.makeRequest(listRequest);
             cwdResponse = HttpFtpProxyClient.makeRequest(cwdRequest);
-            pwdResponse = HttpFtpProxyClient.makeRequest(pwdRequest);
+//            pwdResponse = HttpFtpProxyClient.makeRequest(pwdRequest);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
             return;
@@ -160,7 +161,7 @@ public class LoginFrame {
         }
 
         if (cwdResponse.getCode().equals("200")) {
-            serverFrame.updateCurrentPath(pwdResponse.getData());
+            serverFrame.updateCurrentPath("/");
         } else {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "cwd code = " + cwdResponse.getCode());
         }

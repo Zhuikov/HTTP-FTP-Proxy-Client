@@ -61,7 +61,7 @@ public class HttpFtpProxyClient {
             proxyClientGUI.addPanel(frame.getMainPanel(),LoginFrame.frameKey);
             proxyClientGUI.showPanel(LoginFrame.frameKey);
 
-//            ServerFrame serverFrame = new ServerFrame(proxyClientGUI);
+//            ServerFrame serverFrame = new ServerFrame(proxyClientGUI, "ftp.funet.ru", "13213");
 //            proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
 //            proxyClientGUI.showPanel(ServerFrame.frameKey);
         });
@@ -78,7 +78,6 @@ public class HttpFtpProxyClient {
         os.write(request.getBytes());
     }
 
-    //todo убрать DataAndCode, возвращать ArrayList
     private static DataAndCode readResponse(Socket socket) throws IOException {
 
         DataAndCode dataAndCode = new DataAndCode();
