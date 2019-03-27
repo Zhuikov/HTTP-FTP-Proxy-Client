@@ -7,6 +7,7 @@ import java.awt.*;
 public class ProxyClientGUI {
 
     public static final Font labelFont = new Font("Serif", Font.PLAIN, 16);
+    public static final Dimension buttonSize = new Dimension(150, 25);
 
     private final JFrame frame = new JFrame("Http-Ftp Proxy");
     private CardLayout cardLayout = new CardLayout();

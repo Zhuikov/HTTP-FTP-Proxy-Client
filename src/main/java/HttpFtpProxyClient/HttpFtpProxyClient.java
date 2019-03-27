@@ -14,41 +14,30 @@ public class HttpFtpProxyClient {
     static public final String proxyAddress = "127.0.0.1";
     static public final int proxyPort = 7500;
 
-    static private final String contentLength = "Content-Length: ";
+    static public final String contentLength = "Content-Length: ";
     static private ProxyClientGUI proxyClientGUI = new ProxyClientGUI();
 
-    static class DataAndCode {
-        private String code = null;
-        private ArrayList<Character> data = null;
+    static class ResponseStructure {
+        private String headers = null;
+        private ArrayList<Character> body = null;
 
-        public DataAndCode() {}
+        public ResponseStructure() {}
 
-        public String getCode() {
-            return code;
+        public String getHeaders() {
+            return headers;
         }
 
-        public ArrayList<Character> getData() {
-            return data;
+        public ArrayList<Character> getBody() {
+            return body;
         }
 
-        public void setCode(String code) {
-            this.code = code;
+        public void setHeaders(String headers) {
+            this.headers = headers;
         }
 
-        public void setData(ArrayList<Character> data) {
-            this.data = data;
+        public void setBody(ArrayList<Character> body) {
+            this.body = body;
         }
-    }
-
-    public static void main1(String[] args) {
-        String st = "IURII:GAGARIN";
-        byte[] decBytes = Base64.getEncoder().encode(st.getBytes());
-        String dec = new String(decBytes, StandardCharsets.UTF_8);
-        System.out.println(dec);
-        byte[] encBytes = Base64.getDecoder().decode(dec.getBytes());
-        String enc = new String(encBytes, StandardCharsets.UTF_8);
-        System.out.println(enc);
-
     }
 
     public static void main(String[] args) {
@@ -67,36 +56,35 @@ public class HttpFtpProxyClient {
         });
     }
 
-    public static DataAndCode makeRequest(String request) throws IOException {
+    public static ResponseStructure makeRequest(ResponseStructure request) throws IOException {
         Socket socket = new Socket(proxyAddress, proxyPort);
         sendRequest(socket, request);
         return readResponse(socket);
     }
 
-    private static void sendRequest(Socket socket, String request) throws IOException {
+    private static void sendRequest(Socket socket, ResponseStructure request) throws IOException {
         OutputStream os = socket.getOutputStream();
-        os.write(request.getBytes());
+        os.write(request.getHeaders().getBytes());
+        if (request.getBody() != null)
+            for (char c : request.getBody())
+                os.write(c);
     }
 
-    private static DataAndCode readResponse(Socket socket) throws IOException {
+    private static ResponseStructure readResponse(Socket socket) throws IOException {
 
-        DataAndCode dataAndCode = new DataAndCode();
+        ResponseStructure responseStructure = new ResponseStructure();
         InputStream is = socket.getInputStream();
 
-//        System.out.println("readResponse: before headers");
         String line;
         ArrayList<String> headers = new ArrayList<>();
         while (true) {
-//            System.out.println("\treadResponse: readString");
             line = readString(is);
-//            System.out.println("response line: " + line);
             if (line.isEmpty()) break;
             headers.add(line);
         }
-//        System.out.println("readResponse: after headers");
 
         String[] firstLine = headers.get(0).split(" ");
-        dataAndCode.setCode(firstLine[1]);
+        responseStructure.setHeaders(firstLine[1]);
 
         int bodyLength = 0;
         for (String s : headers) {
@@ -107,20 +95,17 @@ public class HttpFtpProxyClient {
             }
         }
 
-//        System.out.println("readResponse: before read data");
         int readBytes = 0;
         ArrayList<Character> bodyData = new ArrayList<>();
         while (readBytes < bodyLength) {
             bodyData.add((char) is.read());
             readBytes++;
         }
-//        System.out.println("readResponse: after read data");
 
-        System.out.println("Body len = " + bodyLength + "\n read = " + readBytes);
+        responseStructure.setBody(bodyData);
 
-        dataAndCode.setData(bodyData);
-
-        return dataAndCode;
+        socket.close();
+        return responseStructure;
     }
 
     static private String readString(InputStream is) throws IOException {
@@ -128,7 +113,6 @@ public class HttpFtpProxyClient {
         char value;
 
         while (true) {
-//            System.out.println("\treadString");
             value = (char)is.read();
             if (value == '\n') break;
             sb.append(value);

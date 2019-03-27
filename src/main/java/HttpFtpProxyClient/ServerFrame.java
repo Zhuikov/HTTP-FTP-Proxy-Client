@@ -19,15 +19,11 @@ public class ServerFrame {
     private final String loginPassword;
     private final JPanel mainPanel = new JPanel();
     private final JList list = new JList();
-    private final JButton downloadButton = new JButton("Download");
-    JRadioButton downloadAscii = new JRadioButton("ASCII");
-    JRadioButton downloadBinary = new JRadioButton("BINARY");
-    private final JButton uploadButton = new JButton("Upload");
-    JRadioButton uploadAscii = new JRadioButton("ASCII");
-    JRadioButton upldoadBinary = new JRadioButton("BINARY");
-    private final JLabel pathLabel = new JLabel("Path: ");
+    private JRadioButton downloadAscii = new JRadioButton("ASCII");
+    private JRadioButton downloadBinary = new JRadioButton("BINARY");
+    private JRadioButton uploadAscii = new JRadioButton("ASCII");
+    private JRadioButton upldoadBinary = new JRadioButton("BINARY");
     private final JLabel currentDirLabel = new JLabel("/");
-    private final Dimension buttonSize = new Dimension(150, 25);
 
     public ServerFrame(ProxyClientGUI proxyClientGUI, String serverAddress, String loginPassword) {
 
@@ -38,11 +34,13 @@ public class ServerFrame {
         // setting list panel
         JPanel listPanel = new JPanel();
         list.setFont(new Font("monospaced", Font.PLAIN, 10));
-        JScrollPane menuScrollPane = new JScrollPane(list);
         list.addMouseListener(forwardDirAction());
-
+        JScrollPane menuScrollPane = new JScrollPane(list);
         menuScrollPane.setPreferredSize(new Dimension(470, 350));
         listPanel.add(menuScrollPane);
+
+        updatePath("/");
+        updateList(currentDir);
 
         // setting panel with "download" and "upload" buttons
         JPanel buttonsPanel = new JPanel();
@@ -60,28 +58,42 @@ public class ServerFrame {
         c0.insets = new Insets(15, 0, 0, 110);
         buttonsPanel.add(backButton, c0);
 
-        downloadButton.setPreferredSize(buttonSize);
+        JButton downloadButton = new JButton("Download");
+        downloadButton.setPreferredSize(ProxyClientGUI.buttonSize);
         downloadButton.addActionListener(e -> downloadAction());
-        GridBagConstraints c = new GridBagConstraints();
-        c.anchor = GridBagConstraints.NORTH;
-        c.weighty = 1.0;
-        c.gridx = 1;
-        c.gridy = 0;
-        c.insets = new Insets(54, 0, 0, 0);
-        buttonsPanel.add(makeASCIIBinaryPanel(downloadButton, downloadAscii, downloadBinary), c);
-
-        uploadButton.setPreferredSize(buttonSize);
-        uploadButton.addActionListener(e -> uploadAction());
         GridBagConstraints c1 = new GridBagConstraints();
-        c1.anchor = GridBagConstraints.CENTER;
+        c1.anchor = GridBagConstraints.NORTH;
         c1.weighty = 1.0;
         c1.gridx = 1;
         c1.gridy = 0;
-        c1.insets = new Insets(2, 0 , 0, 0);
-        buttonsPanel.add(makeASCIIBinaryPanel(uploadButton, uploadAscii, upldoadBinary), c1);
+        c1.insets = new Insets(54, 0, 0, 0);
+        buttonsPanel.add(makeASCIIBinaryPanel(downloadButton, downloadAscii, downloadBinary), c1);
+
+        JButton uploadButton = new JButton("Upload");
+        uploadButton.setPreferredSize(ProxyClientGUI.buttonSize);
+        uploadButton.addActionListener(e -> uploadAction());
+        GridBagConstraints c2 = new GridBagConstraints();
+        c2.anchor = GridBagConstraints.CENTER;
+        c2.weighty = 1.0;
+        c2.gridx = 1;
+        c2.gridy = 0;
+        c2.insets = new Insets(2, 0 , 0, 0);
+        buttonsPanel.add(makeASCIIBinaryPanel(uploadButton, uploadAscii, upldoadBinary), c2);
+
+        JButton deleteButton = new JButton("Delete");
+        deleteButton.setPreferredSize(ProxyClientGUI.buttonSize);
+        deleteButton.addActionListener(e -> deleteAction());
+        GridBagConstraints c3 = new GridBagConstraints();
+        c3.anchor = GridBagConstraints.CENTER;
+        c3.weighty = 1.0;
+        c3.gridx = 1;
+        c3.gridy = 0;
+        c3.insets = new Insets(130, 0, 0, 0);
+        buttonsPanel.add(deleteButton, c3);
 
         // setting path panel
         JPanel pathPanel = new JPanel();
+        JLabel pathLabel = new JLabel("Path: ");
         pathLabel.setFont(ProxyClientGUI.labelFont);
         currentDirLabel.setFont(ProxyClientGUI.labelFont);
         pathPanel.add(pathLabel);
@@ -91,20 +103,6 @@ public class ServerFrame {
         mainPanel.add(pathPanel, constraintsPathPanel());
         mainPanel.add(listPanel, constraintsListPanel());
         mainPanel.add(buttonsPanel, constraintsButtonPanel());
-    }
-
-    public void updateCurrentPath(String newPath) {
-        currentDir = newPath;
-        currentDirLabel.setText(currentDir);
-    }
-
-    public void updateCurrentPath(ArrayList<Character> currentPath) {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (char c : currentPath) {
-            stringBuilder.append(c);
-        }
-        currentDir = stringBuilder.toString();
-        currentDirLabel.setText(currentDir);
     }
 
     public void updateList(ArrayList<Character> ftpResponse) {
@@ -131,49 +129,29 @@ public class ServerFrame {
                     System.out.println(element);
                     if (element.charAt(0) == 'd') {
                         String newDir = getFileName(element);
-                        String listRequest = makeListRequest(currentDir + newDir);
-                        String cwdRequest  = makeCwdRequest(newDir);
-
-                        HttpFtpProxyClient.DataAndCode listResponse;
-                        HttpFtpProxyClient.DataAndCode cwdResponse;
-                        try {
-                            listResponse = HttpFtpProxyClient.makeRequest(listRequest);
-                            cwdResponse = HttpFtpProxyClient.makeRequest(cwdRequest);
-                        } catch (IOException e) {
-                            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
-                            return;
-                        }
-
-                        if (listResponse.getData() != null) {
-                            updateList(listResponse.getData());
-                        } else {
-                            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot get list data");
-                            return;
-                        }
-
-                        if (cwdResponse.getCode().equals("200")) {
-                            currentDir += newDir + '/';
-                            currentDirLabel.setText(currentDir);
-                        } else {
-                            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot change directory");
-                            return;
-                        }
+                        System.out.println("Current dir before forward update = " + currentDir);
+                        updatePath(currentDir + newDir + '/');
+                        updateList(currentDir);
+                        System.out.println("Current dir after  forward update = " + currentDir);
                     }
                 }
             }
         };
-
     }
 
     // todo выбирать имя файла куда сохранять
     private void downloadAction() {
 
+        if (list.isSelectionEmpty())
+            return;
+
         if (list.getSelectedValue().toString().charAt(0) != '-')
             return;
 
-        String retrRequest = makeRetrRequest(currentDir + getFileName(list.getSelectedValue().toString()),
-                downloadAscii.isSelected() ? 'A' : 'I');
-        JFileChooser chooser = new JFileChooser("/home/artem/Documents/proxyTest");
+        HttpFtpProxyClient.ResponseStructure retrRequest =
+                makeRetrRequest(currentDir + getFileName(list.getSelectedValue().toString()),
+                        downloadAscii.isSelected() ? 'A' : 'I');
+        JFileChooser chooser = new JFileChooser("/home/artem/Desktop");
         chooser.setDialogTitle("Choose a directory");
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
@@ -186,8 +164,8 @@ public class ServerFrame {
 
         try (OutputStream outputStream = new FileOutputStream(downloadPath + "/" +
                 getFileName(list.getSelectedValue().toString()))) {
-            HttpFtpProxyClient.DataAndCode response = HttpFtpProxyClient.makeRequest(retrRequest);
-            for (char c : response.getData()) {
+            HttpFtpProxyClient.ResponseStructure response = HttpFtpProxyClient.makeRequest(retrRequest);
+            for (char c : response.getBody()) {
                 outputStream.write(c);
             }
         } catch (IOException e) {
@@ -195,7 +173,7 @@ public class ServerFrame {
             return;
         }
 
-        JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Successfully saved!");
+        JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Saved!");
     }
 
     private void uploadAction() {
@@ -207,27 +185,32 @@ public class ServerFrame {
         if (chooser.showSaveDialog(proxyClientGUI.getFrame()) != JFileChooser.APPROVE_OPTION)
             return;
 
+        // open and upload file
         ArrayList<Character> body = new ArrayList<>();
         int input;
-        HttpFtpProxyClient.DataAndCode response;
-        System.out.println(chooser.getSelectedFile().getAbsolutePath());
-        try (FileInputStream inputStream = new FileInputStream(chooser.getSelectedFile().getAbsolutePath())) {
+        HttpFtpProxyClient.ResponseStructure storResponse;
+        System.out.println("Uploading: " + chooser.getSelectedFile().getAbsolutePath());
+        try {
+            FileInputStream inputStream = new FileInputStream(chooser.getSelectedFile().getAbsolutePath());
             while ((input = inputStream.read()) != -1)
                 body.add((char) input);
             inputStream.close();
-            String request = makeStorRequest(currentDir, body, uploadAscii.isSelected() ? 'A' : 'I');
-            response = HttpFtpProxyClient.makeRequest(request);
+            HttpFtpProxyClient.ResponseStructure request = makeStorRequest(currentDir + chooser.getSelectedFile().getName(),
+                    body, uploadAscii.isSelected() ? 'A' : 'I');
+            storResponse = HttpFtpProxyClient.makeRequest(request);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot upload file");
             e.printStackTrace();
             return;
         }
 
-        if (response.getCode().equals("200")) {
+        if (storResponse.getHeaders().equals("200")) {
             JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Uploaded!");
         } else {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error " + response.getCode());
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error " + storResponse.getHeaders());
         }
+
+        updateList(currentDir);
     }
 
     // изменяет метку currentPath, currentDir и запрашивает list
@@ -236,74 +219,124 @@ public class ServerFrame {
         if (currentDir.equals("/"))
             return;
 
-        String tempDir = currentDir;
-        currentDir = currentDir.substring(0, currentDir.lastIndexOf('/'));
-        currentDir = currentDir.substring(0, currentDir.lastIndexOf('/'));
-        currentDir += '/';
+        String previousDir = currentDir.substring(0, currentDir.lastIndexOf('/'));
+        previousDir = previousDir.substring(0, previousDir.lastIndexOf('/')) + '/';
 
-        String listRequest = makeListRequest(currentDir);
-        String cwdRequest = makeCwdRequest(currentDir);
+        updatePath(previousDir);
+        updateList(currentDir);
+    }
 
-        HttpFtpProxyClient.DataAndCode listResponse;
-        HttpFtpProxyClient.DataAndCode cwdResponse;
+    private void deleteAction() {
+
+        if (list.isSelectionEmpty())
+            return;
+
+        //todo delete directories
+        HttpFtpProxyClient.ResponseStructure deleRequest =
+                makeDeleRequest(currentDir + getFileName(list.getSelectedValue().toString()));
+        HttpFtpProxyClient.ResponseStructure deleResponse;
+
+        try {
+            deleResponse = HttpFtpProxyClient.makeRequest(deleRequest);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error while sending request");
+            return;
+        }
+
+        if (deleResponse.getHeaders().equals("200")) {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Deleted");
+        } else {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot delete file");
+        }
+
+        updateList(currentDir);
+    }
+
+    private void updateList(String dir) {
+        HttpFtpProxyClient.ResponseStructure listRequest = makeListRequest(dir);
+        HttpFtpProxyClient.ResponseStructure listResponse;
         try {
             listResponse = HttpFtpProxyClient.makeRequest(listRequest);
-            cwdResponse = HttpFtpProxyClient.makeRequest(cwdRequest);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error request for list");
             return;
         }
 
-        if (listResponse.getData() != null) {
-            updateList(listResponse.getData());
+        if (listResponse.getHeaders().equals("200"))
+            updateList(listResponse.getBody());
+        else
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot update list");
+    }
+
+    private void updatePath(String newDir) {
+        HttpFtpProxyClient.ResponseStructure request = makeCwdRequest(newDir);
+        HttpFtpProxyClient.ResponseStructure response;
+        try {
+            response = HttpFtpProxyClient.makeRequest(request);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error request for cwd");
+            return;
+        }
+
+        if (response.getHeaders().equals("200")) {
+            currentDir = newDir;
+            currentDirLabel.setText(newDir);
         } else {
-            currentDir = tempDir;
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot get list data");
-            return;
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot update path");
         }
-
-        if (cwdResponse.getCode().equals("200")) {
-            currentDirLabel.setText(currentDir);
-        } else {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot change directory");
-            return;
-        }
-
     }
 
     private String getFileName(String line) {
         return line.substring(line.lastIndexOf(' ') + 1, line.length() - 1);
     }
 
-    private String makeRetrRequest(String file, char type) {
-        return "GET " + serverAddress + "/file" + file + "?type=\"" + type + "\" HTTP/1.1\n" +
+    private HttpFtpProxyClient.ResponseStructure makeRetrRequest(String file, char type) {
+        HttpFtpProxyClient.ResponseStructure responseStructure = new HttpFtpProxyClient.ResponseStructure();
+        responseStructure.setHeaders("GET " + serverAddress + "/file" + file + "?type=\"" + type + "\" HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress +
-                "\nAuthorization: Basic " + loginPassword + "\n\n";
+                "\nAuthorization: Basic " + loginPassword + "\n\n");
+
+        return responseStructure;
     }
 
-    private String makeListRequest(String dir) {
-
-        return "GET " + serverAddress + "/file" + dir + "/?type=\"A\" HTTP/1.1\n" +
+    private HttpFtpProxyClient.ResponseStructure makeListRequest(String dir) {
+        HttpFtpProxyClient.ResponseStructure responseStructure = new HttpFtpProxyClient.ResponseStructure();
+        responseStructure.setHeaders("GET " + serverAddress + "/file" + dir + "?type=\"A\" HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress +
-                "\nAuthorization: Basic " + loginPassword + "\n\n";
+                "\nAuthorization: Basic " + loginPassword + "\n\n");
+
+        return responseStructure;
     }
 
-    private String makeCwdRequest(String dir) {
+    private HttpFtpProxyClient.ResponseStructure makeCwdRequest(String dir) {
 
-        return "GET " + serverAddress + "/cwd?dir=\"" + dir + "\" HTTP/1.1\n" +
+        HttpFtpProxyClient.ResponseStructure responseStructure = new HttpFtpProxyClient.ResponseStructure();
+        responseStructure.setHeaders("GET " + serverAddress + "/cwd?dir=\"" + dir + "\" HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress +
-                "\nAuthorization: Basic " + loginPassword + "\n\n";
+                "\nAuthorization: Basic " + loginPassword + "\n\n");
+
+        return responseStructure;
     }
 
-    private String makeStorRequest(String filePlace, ArrayList<Character> body, char type) {
-        String request = "PUT " + serverAddress + "/file" + filePlace + "?type=\"" + type + "\" HTTP/1.1\n" +
+    private HttpFtpProxyClient.ResponseStructure makeStorRequest(String filePlace, ArrayList<Character> body, char type) {
+
+        HttpFtpProxyClient.ResponseStructure responseStructure = new HttpFtpProxyClient.ResponseStructure();
+        responseStructure.setHeaders("PUT " + serverAddress + "/file" + filePlace + "?type=\"" + type + "\" HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress +
-                "\nAuthorization: Basic " + loginPassword + "\n\n";
-        StringBuilder sb = new StringBuilder(request);
-        for (char c : body) {
-            sb.append(c);
-        }
-        return sb.toString();
+                "\nAuthorization: Basic " + loginPassword + '\n' +
+                HttpFtpProxyClient.contentLength + body.size() + "\n\n");
+        responseStructure.setBody(body);
+
+        return responseStructure;
+    }
+
+    private HttpFtpProxyClient.ResponseStructure makeDeleRequest(String filePlace) {
+
+        HttpFtpProxyClient.ResponseStructure responseStructure = new HttpFtpProxyClient.ResponseStructure();
+        responseStructure.setHeaders("DELETE " + serverAddress + "/file" + filePlace + " HTTP/1.1\n" +
+                "Host: " + HttpFtpProxyClient.proxyAddress +
+                "\nAuthorization: Basic " + loginPassword + "\n\n");
+        return responseStructure;
     }
 
     private GridBagConstraints constraintsListPanel() {

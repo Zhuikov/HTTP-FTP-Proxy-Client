@@ -3,8 +3,6 @@ package HttpFtpProxyClient;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.net.Socket;
 import java.util.Base64;
 
 public class LoginFrame {
@@ -112,7 +110,6 @@ public class LoginFrame {
         panel.add(button, c);
     }
 
-    // запрашивает list / и pwd у указанного сервера.
     private void connectAction() {
 
         final String selectedServer = serverBox.getSelectedItem().toString();
@@ -127,55 +124,9 @@ public class LoginFrame {
                 (userText.getText() + ':' + passText.getText()).getBytes()
         );
 
-        final String listRequest = "GET " + serverAddress + "/file/?type=\"A\" HTTP/1.1\n" +
-                "Host: " + HttpFtpProxyClient.proxyAddress +
-                "\nAuthorization: Basic " + loginPassword + "\n\n";
-
-        final String cwdRequest = "GET "  + serverAddress + "/cwd?dir=\"/\" HTTP/1.1\n" +
-                "Host: " + HttpFtpProxyClient.proxyAddress +
-                "\nAuthorization: Basic " + loginPassword + "\n\n";
-
-//        final String pwdRequest = "GET " + serverAddress + "/pwd HTTP/1.1\n" +
-//                "Host: " + HttpFtpProxyClient.proxyAddress +
-//                "\nAuthorization: Basic " + loginPassword + "\n\n";
-
-        HttpFtpProxyClient.DataAndCode listResponse;
-        HttpFtpProxyClient.DataAndCode cwdResponse;
-//        HttpFtpProxyClient.DataAndCode pwdResponse;
-
-        // make request for list, cwd, and pwd
-        try {
-            listResponse = HttpFtpProxyClient.makeRequest(listRequest);
-            cwdResponse = HttpFtpProxyClient.makeRequest(cwdRequest);
-//            pwdResponse = HttpFtpProxyClient.makeRequest(pwdRequest);
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), e.getMessage());
-            return;
-        }
-
         ServerFrame serverFrame = new ServerFrame(proxyClientGUI, serverAddress, loginPassword);
-        if (listResponse.getData() != null) {
-            serverFrame.updateList(listResponse.getData());
-        } else {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "list request is null");
-        }
-
-        if (cwdResponse.getCode().equals("200")) {
-            serverFrame.updateCurrentPath("/");
-        } else {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "cwd code = " + cwdResponse.getCode());
-        }
-
-        //  ????
-//        if (pwdResponse != null) {
-//            serverFrame.updateCurrentPath(pwdResponse.getData());
-//        } else {
-//            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "list request is null");
-//        }
-
         proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);
         proxyClientGUI.showPanel(ServerFrame.frameKey);
         proxyClientGUI.setFrameTitle(serverAddress);
     }
-
 }
