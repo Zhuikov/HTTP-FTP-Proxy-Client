@@ -3,6 +3,7 @@ package HttpFtpProxyClient;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.util.Base64;
 
 public class LoginFrame {
@@ -123,6 +124,21 @@ public class LoginFrame {
         final String loginPassword = Base64.getEncoder().encodeToString(
                 (userText.getText() + ':' + passText.getText()).getBytes()
         );
+
+        HttpFtpProxyClient.ResponseStructure checkAuth = new HttpFtpProxyClient.ResponseStructure();
+        checkAuth.setHeaders("GET " + serverAddress + "/auth HTTP/1.1\n" +
+                "Host: " + HttpFtpProxyClient.proxyAddress +
+                "\nAuthorization: Basic " + loginPassword + "\n\n");
+        try {
+            HttpFtpProxyClient.ResponseStructure response = HttpFtpProxyClient.makeRequest(checkAuth);
+            if (!response.getHeaders().equals("200")) {
+                JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Auth error");
+                return;
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error check auth");
+        }
+
 
         ServerFrame serverFrame = new ServerFrame(proxyClientGUI, serverAddress, loginPassword);
         proxyClientGUI.addPanel(serverFrame.getMainPanel(), ServerFrame.frameKey);

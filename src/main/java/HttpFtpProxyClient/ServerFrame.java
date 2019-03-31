@@ -91,6 +91,16 @@ public class ServerFrame {
         c3.insets = new Insets(130, 0, 0, 0);
         buttonsPanel.add(deleteButton, c3);
 
+        JButton quitButton = new JButton("Quit");
+        quitButton.addActionListener(e -> quitAction());
+        quitButton.setPreferredSize(backButton.getPreferredSize());
+        GridBagConstraints c4 = new GridBagConstraints();
+        c4.anchor = GridBagConstraints.SOUTH;
+        c4.gridx = 1;
+        c4.gridy = 0;
+        c4.insets = new Insets(0, 0, 15, 110);
+        buttonsPanel.add(quitButton, c4);
+
         // setting path panel
         JPanel pathPanel = new JPanel();
         JLabel pathLabel = new JLabel("Path: ");
@@ -239,7 +249,7 @@ public class ServerFrame {
         try {
             deleResponse = HttpFtpProxyClient.makeRequest(deleRequest);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error while sending request");
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error while sending dele request");
             return;
         }
 
@@ -252,20 +262,40 @@ public class ServerFrame {
         updateList(currentDir);
     }
 
-    private void updateList(String dir) {
-        HttpFtpProxyClient.ResponseStructure listRequest = makeListRequest(dir);
-        HttpFtpProxyClient.ResponseStructure listResponse;
+    private void quitAction() {
+
+        HttpFtpProxyClient.ResponseStructure quitRequest = makeQuitRequest();
+        HttpFtpProxyClient.ResponseStructure quitResponse;
+
         try {
-            listResponse = HttpFtpProxyClient.makeRequest(listRequest);
+            quitResponse = HttpFtpProxyClient.makeRequest(quitRequest);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error request for list");
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error while sending quit request");
             return;
         }
 
-        if (listResponse.getHeaders().equals("200"))
-            updateList(listResponse.getBody());
-        else
-            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot update list");
+        if (quitResponse.getHeaders().equals("200")) {
+            proxyClientGUI.showPanel(LoginFrame.frameKey);
+            proxyClientGUI.setFrameTitle("Http-Ftp Proxy");
+        } else {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot disconnect user");
+        }
+
+    }
+
+    private void updateList(String dir) {
+        HttpFtpProxyClient.ResponseStructure listRequest = makeListRequest(dir);
+//        HttpFtpProxyClient.ResponseStructure listResponse;
+        try {
+            HttpFtpProxyClient.ResponseStructure listResponse = HttpFtpProxyClient.makeRequest(listRequest);
+            if (listResponse.getHeaders().equals("200"))
+                updateList(listResponse.getBody());
+            else
+                JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Cannot update list");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(proxyClientGUI.getFrame(), "Error request for list");
+//            return;
+        }
     }
 
     private void updatePath(String newDir) {
@@ -334,6 +364,15 @@ public class ServerFrame {
 
         HttpFtpProxyClient.ResponseStructure responseStructure = new HttpFtpProxyClient.ResponseStructure();
         responseStructure.setHeaders("DELETE " + serverAddress + "/file" + filePlace + " HTTP/1.1\n" +
+                "Host: " + HttpFtpProxyClient.proxyAddress +
+                "\nAuthorization: Basic " + loginPassword + "\n\n");
+        return responseStructure;
+    }
+
+    private HttpFtpProxyClient.ResponseStructure makeQuitRequest() {
+
+        HttpFtpProxyClient.ResponseStructure responseStructure = new HttpFtpProxyClient.ResponseStructure();
+        responseStructure.setHeaders("GET " + serverAddress + "/quit HTTP/1.1\n" +
                 "Host: " + HttpFtpProxyClient.proxyAddress +
                 "\nAuthorization: Basic " + loginPassword + "\n\n");
         return responseStructure;
